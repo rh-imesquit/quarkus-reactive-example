@@ -1,13 +1,11 @@
 package com.example;
 
-import jakarta.validation.constraints.NotNull;
+//import jakarta.validation.constraints.NotNull;
 
 public class Language {
     
-    @NotNull
     private String type;
     
-    @NotNull
     private String name;
 
     public Language() {

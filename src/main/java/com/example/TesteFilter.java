@@ -1,29 +1,43 @@
 package com.example;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.logging.Logger;
+
+import org.jboss.resteasy.reactive.server.ServerRequestFilter;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
-import jakarta.ws.rs.ext.Provider;
-import java.io.IOException;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.ext.Provider;
 
 @Provider
 @PreMatching
-public class TesteFilter implements ContainerRequestFilter {
+public class TesteFilter {
+    private static final Logger LOGGER = Logger.getLogger(TesteFilter.class.getName());
 
     @Context
     HttpServerRequest request;
 
-    @Override
-    public void filter(ContainerRequestContext containerRequestContext) throws IOException {
-        System.out.println("TesteFilter intercepted the request");
-        
-        request.bodyHandler(buffer -> {
-            // This is non-blocking; the body is now fully received
-            String body = buffer.toString();
+    @ServerRequestFilter
+    public void doFilter(ContainerRequestContext containerRequestContext) throws IOException {
+        LOGGER.info("Intercepting the request in the Filter");
 
-            System.out.println("Original request body: " + body);
-        });
+        String body = new String(containerRequestContext.getEntityStream().readAllBytes());
+        LOGGER.info("Original request body: " + body);
+
+        ObjectMapper mapper = new ObjectMapper();
+        Language language = mapper.readValue(body, Language.class);
+        
+        String modifiedBody = mapper.writeValueAsString(
+                new Language("Modified-" + language.getType(),
+                             "Modified-" + language.getName()
+                            ));
+        LOGGER.info("Modified request body: " + modifiedBody);
+
+        containerRequestContext.setEntityStream(new ByteArrayInputStream(modifiedBody.getBytes()));
     }
 }
